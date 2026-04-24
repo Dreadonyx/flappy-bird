@@ -30,7 +30,7 @@
     <script>
         const canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
         const GRAVITY = 0.4, MAX_FALL = 8, JUMP = -7, PIPE_WIDTH = 60, PIPE_GAP = 180, PIPE_SPEED = 2.5, SPAWN_RATE = 100;
-        let bird, pipes, score, frame, state, highScore = 0;
+        let bird, pipes, score, frame, state, highScore = parseInt(localStorage.getItem('flappy-highscore')) || 0;
 
         function init() { bird = { x: 80, y: 300, vy: 0, r: 18 }; pipes = []; score = 0; frame = 0; state = 'start'; }
 
@@ -81,7 +81,7 @@
 
         function update() {
             frame++; bird.vy = Math.min(bird.vy + GRAVITY, MAX_FALL); bird.y += bird.vy;
-            pipes.forEach(p => { p.x -= PIPE_SPEED; if (!p.scored && p.x + PIPE_WIDTH < bird.x) { p.scored = true; score++; if (score > highScore) highScore = score; } });
+            pipes.forEach(p => { p.x -= PIPE_SPEED; if (!p.scored && p.x + PIPE_WIDTH < bird.x) { p.scored = true; score++; if (score > highScore) { highScore = score; localStorage.setItem('flappy-highscore', highScore); } } });
             pipes = pipes.filter(p => p.x > -PIPE_WIDTH);
             if (frame % SPAWN_RATE === 0) { const top = Math.random() * (400 - PIPE_GAP) + 50; pipes.push({ x: 400, top, bottom: top + PIPE_GAP, scored: false }); }
             if (bird.y + bird.r > 550 || bird.y - bird.r < 0) return true;
@@ -97,10 +97,11 @@
             requestAnimationFrame(loop);
         }
 
-        function jump() { if (state === 'start') { state = 'play'; bird.vy = JUMP; } else if (state === 'play') bird.vy = JUMP; }
+        function jump() { if (state === 'start') { state = 'play'; bird.vy = JUMP; } else if (state === 'play') bird.vy = JUMP; else if (state === 'over') { init(); state = 'play'; bird.vy = JUMP; } }
 
         document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); jump(); } if (e.code === 'Enter' && state === 'over') { e.preventDefault(); init(); state = 'play'; bird.vy = JUMP; } });
         canvas.addEventListener('click', jump);
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); jump(); });
         init(); loop();
     </script>
 </body>
